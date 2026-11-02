@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+{% block title %}{{ career['name'] }} — FuturePath{% endblock %}
+
+{% block content %}
+
+<!-- editorial hero: full-bleed image with a gradient scrim so text stays readable -->
+<section class="career-hero">
+  {% if hero_image.url %}
+  <img class="ch-img" src="{{ hero_image.url }}" alt="{{ hero_image.alt }}"
+       fetchpriority="high" decoding="async" width="1200" height="760">
+  {% endif %}
+  <span class="ch-scrim"></span>
+  <div class="ch-content wrap">
+    <p class="crumbs" style="color:rgba(255,255,255,.8)">
+      <a href="{{ url_for('careers_page') }}" style="color:rgba(255,255,255,.85)">Careers</a>
+      <span style="opacity:.6"> / </span>{{ career['name'] }}
+    </p>
+    <span class="tag" style="background:rgba(255,255,255,.92);border-color:transparent;color:var(--ink)">
+      {{ career['field'] }}</span>
+    <h1>{{ career['name'] }}</h1>
+    <p class="ch-lede">{{ career['summary'] }}</p>
+    <div class="btn-row">
+      <a class="btn primary lg" href="{{ url_for('roadmap_page') }}?career={{ career['slug'] }}">Build my roadmap</a>
+      <a class="btn lg ch-ghost" href="{{ url_for('compare_page') }}?c={{ career['slug'] }}">Compare with another</a>
+    </div>
+  </div>
+</section>
+
+<section class="section tight">
+  <div class="metric-grid">
+    <div class="metric">
+      <div class="k">Starting salary</div>
+      <div class="v brand" style="font-size:1.05rem">{{ career['salary_start'].split('(')[0].strip() }}</div>
+      <div class="d">{{ career['salary_start'].split('(')[1].rstrip(')') if '(' in career['salary_start'] else 'per year' }}</div>
+    </div>
+    <div class="metric">
+      <div class="k">Mid-career</div>
+      <div class="v good" style="font-size:1.05rem">{{ career['salary_mid'].split('depending')[0].strip() }}</div>
+      <div class="d">with experience</div>
+    </div>
+    <div class="metric">
+      <div class="k">Entry difficulty</div>
+      <div class="v warn" style="font-size:1.3rem">{{ career['difficulty'] }}</div>
+      <div class="d">competitiveness</div>
+    </div>
+    <div class="metric">
+      <div class="k">Entrance exams</div>
+      <div class="v violet" data-count="{{ career['exams']|length }}">0</div>
+      <div class="d">{{ 'national exam(s)' if career['exams'] else 'none required' }}</div>
+    </div>
+  </div>
+</section>
+
+<section class="section tight">
+  <div class="grid two">
+    <div class="card">
+      <div class="card-head">
+        <h3 class="card-title">💼 A typical day</h3>
+      </div>
+      <p class="muted" style="margin:0">{{ career['day_in_life'] }}</p>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <h3 class="card-title">📈 Growth outlook</h3>
+      </div>
+      <p class="muted" style="margin:0">{{ career['growth'] }}</p>
+    </div>
+  </div>
+</section>
+
+<section class="section tight">
+  <div class="grid two">
+    <div class="card">
+      <h3 class="card-title" style="margin-bottom:var(--sp-3)">📚 Subjects that feed into it</h3>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        {% for s in career['subjects_needed'] %}<span class="pill">{{ s }}</span>{% endfor %}
+      </div>
+      <p class="small faint" style="margin:var(--sp-4) 0 0">
+        These are the school subjects this career actually leans on.
+      </p>
+    </div>
+    <div class="card">
+      <h3 class="card-title" style="margin-bottom:var(--sp-3)">🧠 Skills that matter</h3>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        {% for s in career['skills'] %}<span class="pill">{{ s.replace('_', ' ') }}</span>{% endfor %}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% if streams %}
+<section class="section">
+  <div class="section-head">
+    <div>
+      <h2>Which stream to choose</h2>
+      <p>You can reach this career from these Class 11 streams.</p>
+    </div>
+  </div>
+  <div class="career-grid">
+    {% for slug, s in streams.items() %}
+    {% set img = stream_image(slug, 700, 460) %}
+    <a class="career-card" href="{{ url_for('careers_page') }}?stream={{ slug }}" style="text-decoration:none;color:inherit">
+      <div class="cc-media">
+        {% if img.url %}
+        <img src="{{ img.url }}" alt="{{ img.alt }}" loading="lazy" decoding="async"
+             width="700" height="460">
+        {% endif %}
+        <span class="cc-scrim"></span>
+        <span class="cc-field">{{ s['icon'] }} Stream</span>
+      </div>
+      <div class="cc-body">
+        <h3>{{ s['name'] }}</h3>
+        <p class="cc-desc">{{ s['who_it_suits'][:110] }}…</p>
+        <div class="cc-actions"><span class="btn sm">See careers from here →</span></div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+{% if career['exams'] %}
+<section class="section">
+  <div class="section-head">
+    <div>
+      <h2>Entrance exams</h2>
+      <p>What you'd need to prepare for, and when.</p>
+    </div>
+    <a class="btn sm" href="{{ url_for('exams_page') }}">All exams &amp; scholarships</a>
+  </div>
+  <div class="grid">
+    {% for slug in career['exams'] %}
+      {% set e = exam_map.get(slug) %}
+      {% if e %}
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title">{{ e['name'] }}</h3>
+            <p class="small faint" style="margin:0">{{ e['full_name'] }}</p>
+          </div>
+          <span class="tag brand">{{ e['prep_months'] }} mo prep</span>
+        </div>
+        <p class="small" style="margin:0 0 8px">{{ e['eligibility'] }}</p>
+        <p class="small muted" style="margin:0"><b>Held:</b> {{ e['when_held'] }}</p>
+      </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+</section>
+{% else %}
+<div class="info" style="margin-top:var(--sp-6)">
+  <b>No national entrance exam required.</b> This route is entered through board results,
+  portfolios and interviews — which means your marks and your body of work carry the weight.
+</div>
+{% endif %}
+
+{% if courses %}
+<section class="section">
+  <div class="section-head">
+    <div>
+      <h2>Degrees and courses that lead here</h2>
+    </div>
+  </div>
+  <div class="grid">
+    {% for c in courses %}
+    <div class="card">
+      <h3 class="card-title">{{ c['name'] }}</h3>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin:var(--sp-3) 0">
+        <span class="tag">{{ c['level'] }}</span><span class="pill">{{ c['duration'] }}</span>
+      </div>
+      <p class="small muted" style="margin:0">{{ c['summary'] }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<section class="section">
+  <div class="final-cta">
+    <div class="fc-copy">
+      <span class="eyebrow" style="background:rgba(255,255,255,.18);color:#fff;border-color:transparent">
+        Next step</span>
+      <h2>Turn this into a plan you can follow.</h2>
+      <p>Your roadmap covers the stream, subjects, exams, application window and scholarships —
+         in the order they have to happen.</p>
+      <div class="btn-row">
+        <a class="btn lg fc-btn" href="{{ url_for('roadmap_page') }}?career={{ career['slug'] }}">Build my roadmap</a>
+        <a class="btn lg fc-btn-ghost" href="{{ url_for('careers_page') }}">Explore other careers</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

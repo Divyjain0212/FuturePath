@@ -1,0 +1,269 @@
+{% extends "base.html" %}
+{% block title %}Assessment{% endblock %}
+
+{% block content %}
+<section class="hero" style="padding-bottom:14px">
+  <span class="eyebrow">Step 2 of 4</span>
+  <h1>Your assessment</h1>
+  <p class="lede">
+    There are no right answers here, and nothing you choose will be "wrong". Answer for
+    yourself — not for what your family wants, and not for what sounds impressive.
+    Your answers are saved as you go, so you can stop and come back.
+  </p>
+</section>
+
+<div id="progress" style="margin-bottom:var(--sp-6)">
+  <div class="row-between">
+    <span class="small muted" id="progressText">Loading…</span>
+    <a class="btn sm" href="{{ url_for('results_page') }}">See my results so far</a>
+  </div>
+  <div class="match-bar" style="margin-top:8px"><i id="progressBar" style="width:0%"></i></div>
+</div>
+
+<!-- ------------------------------------------------------- academic record -->
+<section class="section tight">
+  <h2>1. Your subject marks</h2>
+  <p class="sub">
+    Add the subjects you actually study and your percentage in each. Add as many or as few as
+    you like — even one subject improves your matches.
+  </p>
+  <div class="card">
+    <div class="subject-list" id="subjectList"></div>
+    <p class="subject-empty" id="subjectEmpty">
+      No subjects added yet. Use the button below, or tap a suggestion.
+    </p>
+
+    <div class="subject-tools">
+      <button class="btn" onclick="addSubject('')">+ Add a subject</button>
+      <button class="btn primary" onclick="saveAcademics()">Save marks</button>
+      <span class="small faint" id="acadStatus"></span>
+    </div>
+
+    <div class="label" style="margin-bottom:8px">Common subjects — tap to add</div>
+    <div class="subject-suggest" id="subjectSuggest"></div>
+
+    <p class="err" id="acadErr"></p>
+  </div>
+</section>
+
+<!-- ------------------------------------------------------------ interests -->
+<section class="section">
+  <h2>2. What you enjoy</h2>
+  <p class="sub">Say how much you agree with each statement. Be honest — an unrealistic answer
+     gives you an unrealistic recommendation.</p>
+  <div class="card q-block" id="interestBlock">
+    {% for q in grouped.interest %}
+    <div class="q-item" data-qid="{{ q['id'] }}">
+      <div class="prompt">{{ q['prompt'] }}</div>
+      <div class="scale">
+        <button onclick="answer(this, {{ q['id'] }}, 1)">Strongly disagree</button>
+        <button onclick="answer(this, {{ q['id'] }}, 2)">Disagree</button>
+        <button onclick="answer(this, {{ q['id'] }}, 3)">Neutral</button>
+        <button onclick="answer(this, {{ q['id'] }}, 4)">Agree</button>
+        <button onclick="answer(this, {{ q['id'] }}, 5)">Strongly agree</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- --------------------------------------------------------------- skills -->
+<section class="section">
+  <h2>3. What you're good at</h2>
+  <p class="sub">Rate yourself honestly on each. This is not a test — a low score here is useful
+     information, not a judgement.</p>
+  <div class="card q-block" id="skillBlock">
+    {% for q in grouped.skill %}
+    <div class="q-item" data-qid="{{ q['id'] }}">
+      <div class="prompt">{{ q['prompt'] }}</div>
+      <div class="scale">
+        <button onclick="answer(this, {{ q['id'] }}, 1)">Not at all</button>
+        <button onclick="answer(this, {{ q['id'] }}, 2)">A little</button>
+        <button onclick="answer(this, {{ q['id'] }}, 3)">Moderate</button>
+        <button onclick="answer(this, {{ q['id'] }}, 4)">Good</button>
+        <button onclick="answer(this, {{ q['id'] }}, 5)">Very strong</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ---------------------------------------------------------- preferences -->
+<section class="section">
+  <h2>4. What matters to you</h2>
+  <p class="sub">These shape the roadmap — how long you're willing to study, and how much
+     certainty you need.</p>
+  <div class="card q-block" id="prefBlock">
+    {% for q in grouped.preference %}
+    <div class="q-item" data-qid="{{ q['id'] }}">
+      <div class="prompt">{{ q['prompt'] }}</div>
+      <div class="scale">
+        <button onclick="answer(this, {{ q['id'] }}, 1)">Strongly disagree</button>
+        <button onclick="answer(this, {{ q['id'] }}, 2)">Disagree</button>
+        <button onclick="answer(this, {{ q['id'] }}, 3)">Neutral</button>
+        <button onclick="answer(this, {{ q['id'] }}, 4)">Agree</button>
+        <button onclick="answer(this, {{ q['id'] }}, 5)">Strongly agree</button>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="btn-row" style="margin-top:var(--sp-6)">
+    <a class="btn primary lg" href="{{ url_for('results_page') }}">Finish — show my results</a>
+    <a class="btn ghost" href="{{ url_for('results_page') }}">Skip to results for now</a>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const EXISTING = {{ answers|tojson }};
+const ACADEMICS = {{ academics|tojson }};
+const SUGGESTED = ["Mathematics", "Physics", "Chemistry", "Biology", "Computer Science",
+                   "English", "Social Science", "Accountancy", "Business Studies",
+                   "Economics", "Psychology", "History", "Geography", "Political Science",
+                   "Fine Arts", "Physical Education", "Hindi", "Informatics Practices"];
+
+// ------------------------------------------------------------- subject rows
+function currentSubjects() {
+  return [...document.querySelectorAll('#subjectList .subject-row')].map(row => ({
+    name: row.querySelector('input[type=text]').value.trim(),
+    marks: row.querySelector('input[type=number]').value,
+  })).filter(s => s.name);
+}
+
+function addSubject(name, marks) {
+  const list = document.getElementById('subjectList');
+  const row = document.createElement('div');
+  row.className = 'subject-row';
+  row.innerHTML = `
+    <input type="text" placeholder="Subject name" value="${name ? escapeAttr(name) : ''}"
+           list="subjectOptions" autocomplete="off">
+    <input type="number" min="0" max="100" step="0.1" placeholder="%"
+           value="${marks !== undefined && marks !== null ? marks : ''}">
+    <button class="subject-remove" title="Remove" aria-label="Remove subject">×</button>`;
+  row.querySelector('.subject-remove').onclick = () => { row.remove(); refreshSubjectUI(); };
+  row.querySelector('input[type=text]').addEventListener('input', refreshSubjectUI);
+  list.appendChild(row);
+  refreshSubjectUI();
+  row.querySelector('input[type=text]').focus();
+}
+
+function escapeAttr(v) {
+  return String(v).replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function refreshSubjectUI() {
+  const rows = document.querySelectorAll('#subjectList .subject-row');
+  document.getElementById('subjectEmpty').style.display = rows.length ? 'none' : 'block';
+
+  // Disable suggestions already in use.
+  const used = new Set(currentSubjects().map(s => s.name.toLowerCase()));
+  document.querySelectorAll('#subjectSuggest button').forEach(b => {
+    b.disabled = used.has(b.textContent.trim().toLowerCase());
+  });
+
+  // Live count so the student can see the form respond.
+  const filled = currentSubjects().filter(s => s.marks !== '').length;
+  document.getElementById('acadStatus').textContent =
+    rows.length ? `${rows.length} subject(s), ${filled} with marks` : '';
+}
+
+function buildSuggestions() {
+  const box = document.getElementById('subjectSuggest');
+  box.innerHTML = '';
+  SUGGESTED.forEach(name => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = name;
+    b.onclick = () => addSubject(name);
+    box.appendChild(b);
+  });
+}
+
+// ------------------------------------------------------------------- saving
+async function saveAcademics() {
+  const errEl = document.getElementById('acadErr');
+  errEl.textContent = '';
+  const rows = currentSubjects();
+
+  if (!rows.length) {
+    errEl.textContent = 'Add at least one subject before saving.';
+    return;
+  }
+  const subjects = {};
+  const invalid = [];
+  rows.forEach(({ name, marks }) => {
+    if (marks === '') { invalid.push(name); return; }
+    const value = Number(marks);
+    if (Number.isNaN(value) || value < 0 || value > 100) { invalid.push(name); return; }
+    subjects[name] = value;
+  });
+  if (invalid.length) {
+    errEl.textContent = `Enter a percentage between 0 and 100 for: ${invalid.join(', ')}`;
+    return;
+  }
+
+  try {
+    const r = await FP.api('/api/academics', { method: 'POST', body: JSON.stringify({ subjects }) });
+    FP.toast(`Saved marks for ${r.saved} subject(s)`);
+    refreshProgress();
+  } catch (e) {
+    if (/not signed in/i.test(e.message)) { FP.openAuth('login'); return; }
+    errEl.textContent = e.message;
+  }
+}
+
+// --------------------------------------------------------------- assessment
+async function answer(btn, qid, score) {
+  const item = btn.closest('.q-item');
+  item.querySelectorAll('.scale button').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  try {
+    await FP.api('/api/assessment/answer', {
+      method: 'POST', body: JSON.stringify({ question_id: qid, score }),
+    });
+    EXISTING[qid] = score;
+    refreshProgress();
+  } catch (e) { FP.toast(e.message); }
+}
+
+function paintExisting() {
+  document.querySelectorAll('.q-item').forEach(item => {
+    const qid = Number(item.dataset.qid);
+    const score = EXISTING[qid];
+    if (!score) return;
+    const buttons = item.querySelectorAll('.scale button');
+    if (buttons[score - 1]) buttons[score - 1].classList.add('on');
+  });
+}
+
+async function refreshProgress() {
+  try {
+    const p = await FP.api('/api/profile');
+    const total = document.querySelectorAll('.q-item').length;
+    const done = p.interest_answered + p.skills_answered;
+    const pct = total ? Math.round(100 * done / total) : 0;
+    document.getElementById('progressBar').style.width = pct + '%';
+    document.getElementById('progressText').textContent =
+      `${done} of ${total} answered (${pct}%) · ${p.academics_entered} subject marks entered`;
+  } catch (e) { /* not signed in */ }
+}
+
+// -------------------------------------------------------------------- init
+(function init() {
+  buildSuggestions();
+
+  // Pre-fill from whatever the student has already saved.
+  const saved = Object.entries(ACADEMICS || {});
+  if (saved.length) {
+    saved.forEach(([name, marks]) => addSubject(name, marks));
+  } else {
+    addSubject('');
+  }
+  paintExisting();
+  refreshProgress();
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,374 @@
+{% extends "base.html" %}
+{% block title %}My profile — FuturePath{% endblock %}
+
+{% block content %}
+<section class="hero compact">
+  <span class="eyebrow">Your account</span>
+  <h1 class="sm">{{ student['display_name'] }}</h1>
+  <p class="lede" style="margin-bottom:var(--sp-4)">
+    {{ student['class_level'] }} · {{ student['board'] }}
+    {%- if student['city'] %}, {{ student['city'] }}{% endif %}
+    {%- if student['state'] %}, {{ student['state'] }}{% endif %}
+    · Joined {{ student['created_at'][:10] }}
+  </p>
+</section>
+
+<!-- --------------------------------------------------- completion + action -->
+<div class="grid two" style="margin-bottom:var(--sp-6)">
+  <div class="card progress-card">
+    <div class="card-head">
+      <div>
+        <h3 class="card-title">Profile completeness</h3>
+        <p class="small faint" style="margin:0">{{ answered }} of {{ total_questions }} questions answered</p>
+      </div>
+    </div>
+    <div class="progress-ring-wrap">
+      <div class="progress-ring">
+        <svg viewBox="0 0 120 120" width="150" height="150">
+          <circle class="pr-track" cx="60" cy="60" r="52"></circle>
+          <circle class="pr-fill" cx="60" cy="60" r="52"
+                  stroke-dasharray="326.7" stroke-dashoffset="326.7"
+                  data-offset="{{ 326.7 - (326.7 * completion / 100) }}"></circle>
+        </svg>
+        <div class="progress-ring-label">
+          <span class="pr-value" data-count="{{ completion }}" data-suffix="%">0%</span>
+          <span class="pr-sub">complete</span>
+        </div>
+      </div>
+      <div class="progress-ring-side">
+        <p class="small muted" style="margin-bottom:var(--sp-3)">
+          {% if completion < 100 %}
+            Answer {{ total_questions - answered }} more question(s) to unlock more accurate
+            career matches.
+          {% else %}
+            Your profile is complete — your matches are as accurate as they can be.
+          {% endif %}
+        </p>
+        <div class="mini-stats">
+          <div><b>{{ profile.interest_answered }}</b><span>interests</span></div>
+          <div><b>{{ profile.skills_answered }}</b><span>skills</span></div>
+          <div><b>{{ profile.preference_answered }}</b><span>preferences</span></div>
+          <div><b>{{ academics|length }}</b><span>subjects</span></div>
+        </div>
+        <a class="btn primary sm" href="{{ url_for('assessment_page') }}">Complete my profile →</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="background:linear-gradient(135deg,#f3f7ff,#faf7ff);border-color:#dfe7fb">
+    <div class="card-head">
+      <div>
+        <h3 class="card-title">What to do next</h3>
+        <p class="small faint" style="margin:0">Your one next step</p>
+      </div>
+      <span class="tag brand">Suggested</span>
+    </div>
+    <h3 style="font-size:1.1rem;margin:var(--sp-3) 0 6px">{{ next_action.label }}</h3>
+    <p class="muted small" style="margin-bottom:var(--sp-5)">{{ next_action.detail }}</p>
+    <a class="btn primary" href="{{ next_action.url }}">{{ next_action.cta }}</a>
+    <div class="btn-row" style="margin-top:var(--sp-4)">
+      <a class="btn sm ghost" href="{{ url_for('results_page') }}">See my matches</a>
+      <a class="btn sm ghost" href="{{ url_for('compare_page') }}">Compare careers</a>
+    </div>
+  </div>
+</div>
+
+<!-- ------------------------------------------------------- snapshot metrics -->
+<div class="metric-grid" style="margin-bottom:var(--sp-8)">
+  <div class="metric">
+    <div class="k">Average marks</div>
+    <div class="v brand" data-count="{{ average_marks }}" data-suffix="%">0%</div>
+    <div class="d">{{ academics|length }} subject(s) entered</div>
+  </div>
+  <div class="metric">
+    <div class="k">Top stream match</div>
+    <div class="v violet" data-count="{{ result.top_stream['match'] if result.top_stream else 0 }}" data-suffix="%">0%</div>
+    <div class="d">{{ result.top_stream['name'] if result.top_stream else 'Not calculated yet' }}</div>
+  </div>
+  <div class="metric">
+    <div class="k">Top career match</div>
+    <div class="v good" data-count="{{ result.top_career['match'] if result.top_career else 0 }}" data-suffix="%">0%</div>
+    <div class="d">{{ result.top_career['name'] if result.top_career else 'Not calculated yet' }}</div>
+  </div>
+  <div class="metric">
+    <div class="k">Roadmaps started</div>
+    <div class="v warn" data-count="{{ roadmaps|length }}">0</div>
+    <div class="d">with saved progress</div>
+  </div>
+</div>
+
+<!-- ------------------------------------------------------------- RIASEC -->
+<div class="grid two" style="margin-bottom:var(--sp-8)">
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h3 class="card-title">Your interest profile</h3>
+        <p class="small faint" style="margin:0">Holland's RIASEC dimensions</p>
+      </div>
+    </div>
+    {% if profile.interest_answered %}
+    <div class="riasec">
+      {% for letter, label in riasec_labels.items() %}
+      {% set val = profile.interest.get(letter, 0) %}
+      <div class="riasec-row">
+        <span class="letter">{{ letter }}</span>
+        <div class="bar"><i style="width: {{ (val * 100)|round|int }}%"></i></div>
+        <span class="val">{{ (val * 100)|round|int }}%</span>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="small muted" style="margin-top:var(--sp-4)">
+      Your strongest dimension is
+      <b>{{ (profile.interest | dictsort(by='value') | last)[0] }}</b> —
+      {{ riasec_labels[(profile.interest | dictsort(by='value') | last)[0]].split('—')[1].strip() }}.
+    </p>
+    {% else %}
+    <div class="empty" style="padding:var(--sp-6)">
+      No interest answers yet.
+      <a href="{{ url_for('assessment_page') }}">Start the assessment</a>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h3 class="card-title">Your subject marks</h3>
+        <p class="small faint" style="margin:0">Feeds 25% of every match score</p>
+      </div>
+      <a class="btn sm ghost" href="{{ url_for('assessment_page') }}">Edit</a>
+    </div>
+    {% if academics %}
+    <div class="table-wrap" style="border:0">
+      <table>
+        <thead><tr><th>Subject</th><th class="num">Marks</th><th style="width:130px">Strength</th></tr></thead>
+        <tbody>
+        {% for a in academics %}
+        <tr>
+          <td>{{ a['subject'] }}</td>
+          <td class="num"><b>{{ a['marks'] }}%</b></td>
+          <td>
+            <div class="match-bar thin {{ 'good' if a['marks'] >= 75 }}">
+              <i style="width: {{ a['marks'] }}%"></i>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <div class="empty" style="padding:var(--sp-6)">
+      No marks entered yet.
+      <a href="{{ url_for('assessment_page') }}">Add your subjects</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<!-- ------------------------------------------------------------ roadmaps -->
+<section class="section tight">
+  <div class="section-head">
+    <div>
+      <h2>Your roadmaps</h2>
+      <p>Plans you have started, with saved progress.</p>
+    </div>
+    <a class="btn sm" href="{{ url_for('results_page') }}">Build another</a>
+  </div>
+
+  {% if roadmaps %}
+  <div class="grid">
+    {% for r in roadmaps %}
+    <a class="card link" href="{{ url_for('roadmap_page') }}?career={{ r['career_slug'] }}">
+      <div class="card-head">
+        <div>
+          <h3 class="card-title">{{ r['icon'] }} {{ r['career_name'] }}</h3>
+          <p class="small faint" style="margin:0">Started {{ r['created_at'][:10] }}</p>
+        </div>
+        <span class="tag {{ 'good' if r['done'] == r['total'] else 'brand' }}">
+          {{ r['done'] }}/{{ r['total'] }}</span>
+      </div>
+      <div class="match-bar">
+        <i style="width: {{ (100 * r['done'] / r['total'])|round|int if r['total'] else 0 }}%"></i>
+      </div>
+      <p class="small muted" style="margin-top:var(--sp-3);margin-bottom:0">
+        {% if r['done'] == r['total'] %}All steps complete — well done.
+        {% elif r['done'] == 0 %}No steps ticked off yet.
+        {% else %}{{ r['total'] - r['done'] }} step(s) remaining.{% endif %}
+      </p>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty">
+    You haven't built a roadmap yet.
+    <a href="{{ url_for('results_page') }}">See your matches</a> and pick a career to start one.
+  </div>
+  {% endif %}
+</section>
+
+<!-- ------------------------------------------------------- top matches -->
+<section class="section tight">
+  <div class="section-head">
+    <div>
+      <h2>Your top matches</h2>
+      <p>The careers that fit your profile best, with the reasoning behind each score.</p>
+    </div>
+    <a class="btn sm" href="{{ url_for('results_page') }}">Full results</a>
+  </div>
+  <div class="career-grid">
+    {% for c in result.careers[:3] %}
+    {% set img = career_image(c['slug'], 700, 460) %}
+    <article class="career-card">
+      <div class="cc-media">
+        {% if img.url %}
+        <img src="{{ img.url }}" alt="{{ img.alt }}" loading="lazy" decoding="async"
+             width="700" height="460">
+        {% endif %}
+        <span class="cc-scrim"></span>
+        <span class="cc-match" data-count="{{ c['match'] }}" data-suffix="%">0%</span>
+        <span class="cc-match-label">match</span>
+        <span class="cc-field">{{ c['field'] }}</span>
+      </div>
+      <div class="cc-body">
+        <h3>{{ c['icon'] }} {{ c['name'] }}</h3>
+        <div class="cc-bar"><i style="width: {{ c['match'] }}%"></i></div>
+        <div class="tiny faint">
+          interest {{ c['parts']['interest'] }}% · skills {{ c['parts']['skills'] }}%
+          · academics {{ c['parts']['academic'] }}%
+        </div>
+        <div class="cc-actions">
+          <a class="btn sm primary" href="{{ url_for('career_detail', slug=c['slug']) }}">Explore career</a>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- -------------------------------------------------------------- settings -->
+<section class="section tight">
+  <div class="section-head">
+    <div>
+      <h2>Account settings</h2>
+      <p>Update your details, change your password, or reset your data.</p>
+    </div>
+  </div>
+
+  <div class="grid two">
+    <div class="card">
+      <h3 class="card-title" style="margin-bottom:var(--sp-4)">Your details</h3>
+      <label class="field"><span>Name</span>
+        <input type="text" id="setName" value="{{ student['display_name'] }}"></label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label class="field"><span>Class</span>
+          <select id="setClass">
+            {% for c in ['Class 10', 'Class 11', 'Class 12'] %}
+            <option {{ 'selected' if student['class_level'] == c }}>{{ c }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label class="field"><span>Board</span>
+          <select id="setBoard">
+            {% for b in ['CBSE', 'ICSE', 'State Board', 'Other'] %}
+            <option {{ 'selected' if student['board'] == b }}>{{ b }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <label class="field"><span>State</span>
+          <input type="text" id="setState" value="{{ student['state'] }}"></label>
+        <label class="field"><span>City</span>
+          <input type="text" id="setCity" value="{{ student['city'] }}"></label>
+      </div>
+      <label class="field"><span>Preferred medium</span>
+        <select id="setMedium">
+          {% for m in ['English', 'Hindi', 'Other'] %}
+          <option {{ 'selected' if student['medium'] == m }}>{{ m }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <p class="err" id="setErr"></p>
+      <button class="btn primary" onclick="saveDetails()">Save details</button>
+    </div>
+
+    <div class="stack">
+      <div class="card">
+        <h3 class="card-title" style="margin-bottom:var(--sp-4)">Change password</h3>
+        <label class="field"><span>Current password</span>
+          <input type="password" id="pwCurrent" autocomplete="current-password"></label>
+        <label class="field"><span>New password</span>
+          <input type="password" id="pwNew" autocomplete="new-password"></label>
+        <p class="err" id="pwErr"></p>
+        <button class="btn" onclick="changePassword()">Update password</button>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title" style="margin-bottom:var(--sp-2)">Reset data</h3>
+        <p class="small muted" style="margin-bottom:var(--sp-4)">
+          Use this if you answered the assessment casually and want to start over.
+          Your account, marks and roadmaps stay.
+        </p>
+        <div class="btn-row">
+          <button class="btn sm" onclick="resetAssessment()">Clear assessment answers</button>
+          <button class="btn sm" onclick="resetAcademics()">Clear subject marks</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function saveDetails() {
+  const err = document.getElementById('setErr');
+  err.textContent = '';
+  try {
+    await FP.api('/api/profile/update', { method: 'POST', body: JSON.stringify({
+      display_name: document.getElementById('setName').value,
+      class_level: document.getElementById('setClass').value,
+      board: document.getElementById('setBoard').value,
+      state: document.getElementById('setState').value,
+      city: document.getElementById('setCity').value,
+      medium: document.getElementById('setMedium').value,
+    })});
+    FP.toast('Details saved');
+    setTimeout(() => location.reload(), 700);
+  } catch (e) { err.textContent = e.message; }
+}
+
+async function changePassword() {
+  const err = document.getElementById('pwErr');
+  err.textContent = '';
+  try {
+    await FP.api('/api/profile/password', { method: 'POST', body: JSON.stringify({
+      current: document.getElementById('pwCurrent').value,
+      new: document.getElementById('pwNew').value,
+    })});
+    FP.toast('Password updated');
+    document.getElementById('pwCurrent').value = '';
+    document.getElementById('pwNew').value = '';
+  } catch (e) { err.textContent = e.message; }
+}
+
+async function resetAssessment() {
+  if (!confirm('Clear all your assessment answers? Your subject marks and roadmaps are kept.')) return;
+  try {
+    await FP.api('/api/profile/reset-assessment', { method: 'POST' });
+    FP.toast('Assessment cleared — you can retake it now');
+    setTimeout(() => location.href = '/assessment', 900);
+  } catch (e) { FP.toast(e.message); }
+}
+
+async function resetAcademics() {
+  if (!confirm('Clear your subject marks?')) return;
+  try {
+    await FP.api('/api/profile/reset-academics', { method: 'POST' });
+    FP.toast('Marks cleared');
+    setTimeout(() => location.reload(), 800);
+  } catch (e) { FP.toast(e.message); }
+}
+</script>
+{% endblock %}

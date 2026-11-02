@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+{% block title %}My roadmap — {{ roadmap.career['name'] }}{% endblock %}
+
+{% block content %}
+<section class="hero" style="padding-bottom:14px">
+  <span class="eyebrow">Step 4 of 4</span>
+  <h1>Your roadmap to {{ roadmap.career['name'] }}</h1>
+  <p class="lede">
+    The order things actually have to happen in, from where you are now to the job.
+    Tick each step as you complete it — your progress is saved.
+  </p>
+  <div class="row-between" style="margin-top:8px">
+    <span class="small muted" id="roadmapProgress">{{ roadmap.done }} of {{ roadmap.total }} steps done</span>
+    <div class="btn-row">
+      <a class="btn sm" href="{{ url_for('results_page') }}">My matches</a>
+      <a class="btn sm ghost" href="{{ url_for('career_detail', slug=roadmap.career['slug']) }}">About this career</a>
+    </div>
+  </div>
+  <div class="match-bar" style="margin-top:8px">
+    <i id="roadmapBar" style="width: {{ (100 * roadmap.done / roadmap.total)|round|int if roadmap.total else 0 }}%"></i>
+  </div>
+</section>
+
+<div class="grid two" style="margin-bottom:var(--sp-8)">
+  <div class="card">
+    <h3>🎯 Target career</h3>
+    <p>{{ roadmap.career['summary'] }}</p>
+    <table style="margin-top:12px">
+      <tbody>
+        <tr><td>Starting salary</td><td><b>{{ roadmap.career['salary_start'] }}</b></td></tr>
+        <tr><td>Mid-career</td><td><b>{{ roadmap.career['salary_mid'] }}</b></td></tr>
+        <tr><td>Difficulty</td><td>{{ roadmap.career['difficulty'] }}</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  {% if roadmap.stream %}
+  <div class="card">
+    <h3>{{ roadmap.stream['icon'] }} Stream to choose</h3>
+    <h3 style="font-size:1.1rem;margin-top:8px">{{ roadmap.stream['name'] }}</h3>
+    <p class="small">{{ roadmap.stream['who_it_suits'] }}</p>
+    <div style="margin-top:12px">
+      <div class="small faint" style="margin-bottom:6px">Subjects</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        {% for s in roadmap.stream['subjects'] %}<span class="pill">{{ s }}</span>{% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+<section class="section tight">
+  <h2>Your step-by-step plan</h2>
+  <p class="sub">Tap the circle to mark a step complete.</p>
+
+  <div class="card">
+    {% for step in roadmap.plan %}
+    {% set idx = loop.index0 %}
+    <div class="milestone {{ 'done' if roadmap.checklist.get(idx|string) }}" data-index="{{ idx }}">
+      <div class="dot" onclick="toggleStep({{ idx }})">{{ '✓' if roadmap.checklist.get(idx|string) else loop.index }}</div>
+      <div class="body">
+        <div class="phase">{{ step['phase'] }}</div>
+        <h4>{{ step['title'] }}</h4>
+        <p>{{ step['detail'] }}</p>
+        {% if step['actions'] %}
+        <ul>
+          {% for a in step['actions'] %}<li>{{ a }}</li>{% endfor %}
+        </ul>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+{% if roadmap.scholarships %}
+<section class="section">
+  <h2>Scholarships you may qualify for</h2>
+  <p class="sub">Based on your stream and level. Check the eligibility carefully and apply early.</p>
+  <div class="grid">
+    {% for s in roadmap.scholarships %}
+    <div class="card">
+      <h3>{{ s['name'] }}</h3>
+      <p class="small faint">{{ s['provider'] }} · {{ s['amount'] }}</p>
+      <p class="small" style="margin-top:10px">{{ s['eligibility'] }}</p>
+      <p class="small muted" style="margin-top:8px"><b>Deadline:</b> {{ s['deadline'] }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+
+<div class="note" style="margin-top:24px">
+  <b>A reminder about this plan:</b> it is a template built from the stream, subjects and exams
+  attached to this career — not a promise. Dates and eligibility change every year, so always
+  confirm on the official exam and scholarship portals before you rely on them.
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const CAREER = "{{ roadmap.career['slug'] }}";
+
+async function toggleStep(index) {
+  try {
+    const r = await FP.api('/api/roadmap/toggle', {
+      method: 'POST', body: JSON.stringify({ career: CAREER, index }),
+    });
+    const el = document.querySelector(`.milestone[data-index="${index}"]`);
+    const done = el.classList.toggle('done');
+    el.querySelector('.dot').textContent = done ? '✓' : String(index + 1);
+    document.getElementById('roadmapProgress').textContent = `${r.done} of ${r.total} steps done`;
+    document.getElementById('roadmapBar').style.width = Math.round(100 * r.done / r.total) + '%';
+    FP.toast(done ? 'Step completed' : 'Marked as not done');
+  } catch (e) {
+    if (/not signed in/i.test(e.message)) FP.openAuth('login');
+    else FP.toast(e.message);
+  }
+}
+</script>
+{% endblock %}

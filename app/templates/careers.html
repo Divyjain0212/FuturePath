@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Explore careers — FuturePath{% endblock %}
+
+{% block content %}
+<section class="hero hero-editorial" style="padding-bottom:var(--sp-5)">
+  <span class="eyebrow">Career explorer</span>
+  <h1>Explore <span class="grad">careers</span></h1>
+  <p class="lede">
+    What the work is actually like day to day, which school subjects feed into it, what it pays,
+    and how hard it is to enter. Filter by field to narrow things down.
+  </p>
+</section>
+
+{% if stream_obj %}
+<div class="info" style="margin-bottom:var(--sp-6)">
+  Showing careers you can reach from <b>{{ stream_obj['name'] }}</b>.
+  <a href="{{ url_for('careers_page') }}">See all careers</a>
+</div>
+{% endif %}
+
+<div class="row-between" style="margin-bottom:var(--sp-6)">
+  <div class="btn-row">
+    <a class="btn sm {{ 'primary' if not active }}" href="{{ url_for('careers_page') }}">All fields</a>
+    {% for f in fields %}
+      <a class="btn sm {{ 'primary' if active == f }}" href="{{ url_for('careers_page', field=f) }}">{{ f }}</a>
+    {% endfor %}
+  </div>
+  <span class="small faint">{{ careers|length }} career{{ '' if careers|length == 1 else 's' }}</span>
+</div>
+
+<div class="career-grid">
+  {% for c in careers %}
+  <article class="career-card">
+    <div class="cc-media">
+      {% if c['image']['url'] %}
+      <img src="{{ c['image']['url'] }}" alt="{{ c['image']['alt'] }}"
+           loading="lazy" decoding="async" width="700" height="460">
+      {% endif %}
+      <span class="cc-scrim"></span>
+      <span class="cc-field">{{ c['field'] }}</span>
+      <span class="cc-match" style="font-size:1.05rem">{{ c['difficulty'] }}</span>
+      <span class="cc-match-label">entry difficulty</span>
+    </div>
+    <div class="cc-body">
+      <h3>{{ c['icon'] }} {{ c['name'] }}</h3>
+      <p class="cc-desc">{{ c['summary'][:118] }}…</p>
+      <div class="cc-skills">
+        {% for s in c['skills'][:3] %}<span class="pill">{{ s.replace('_', ' ') }}</span>{% endfor %}
+      </div>
+      <div class="cc-meta">
+        <span class="pill">Starts at {{ c['salary_start'].split('(')[0].strip() }}</span>
+      </div>
+      <div class="cc-actions">
+        <a class="btn sm primary" href="{{ url_for('career_detail', slug=c['slug']) }}">Explore career</a>
+      </div>
+    </div>
+  </article>
+  {% endfor %}
+</div>
+
+{% if not careers %}
+<div class="empty">No careers in that field yet.</div>
+{% endif %}
+{% endblock %}

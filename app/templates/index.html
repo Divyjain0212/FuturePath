@@ -1,0 +1,608 @@
+{% extends "base.html" %}
+{% block title %}FuturePath — find the career path built for you{% endblock %}
+
+{% block content %}
+
+{% if student and dashboard %}
+<!-- ============================================================ 1. HERO -->
+<section class="hero hero-editorial">
+  <div class="hero-split">
+    <div class="hero-copy">
+      <span class="eyebrow" data-live>Welcome back, {{ student['display_name'].split(' ')[0] }}</span>
+      <h1>Find the career path that's <span class="grad">built for you</span>.</h1>
+      <p class="lede">
+        FuturePath reads your interests, skills and academic record, then ranks every stream and
+        career against them — and gives you a plan to get there.
+      </p>
+
+      {% if dashboard.result.top_career %}
+      <div class="hero-highlight">
+        <span class="hh-label">Your strongest match right now</span>
+        <div class="hh-main">
+          <span class="hh-ico">{{ dashboard.result.top_career['icon'] }}</span>
+          <span class="hh-name">{{ dashboard.result.top_career['name'] }}</span>
+          <span class="hh-score" data-count="{{ dashboard.result.top_career['match'] }}" data-suffix="%">0%</span>
+        </div>
+      </div>
+      {% endif %}
+
+      <div class="btn-row" style="margin-top:var(--sp-6)">
+        <a class="btn primary lg" href="{{ dashboard.next_action.url }}">{{ dashboard.next_action.cta }}</a>
+        <a class="btn lg" href="{{ url_for('careers_page') }}">Explore careers</a>
+      </div>
+    </div>
+
+    <!-- Visual composition: orbiting career icons around the FuturePath mark -->
+    <div class="hero-visual" aria-hidden="true">
+      <div class="orbit-stage">
+        <!-- three counter-rotating rings -->
+        <div class="orbit-ring ring-1"></div>
+        <div class="orbit-ring ring-2"></div>
+        <div class="orbit-ring ring-3"></div>
+
+        <!-- spokes that pulse outward from the core -->
+        <div class="spokes">
+          {% for i in range(8) %}
+          <span class="spoke" style="--a: {{ i * 45 }}deg; --d: {{ 0.4 + (i % 4) * 0.35 }}s"></span>
+          {% endfor %}
+        </div>
+
+        <!-- the AI core: a robot that watches, thinks and answers -->
+        <figure class="orbit-ai">
+          <span class="ai-halo"></span>
+          <span class="ai-halo ai-halo-2"></span>
+
+          <svg class="ai-robot" viewBox="0 0 200 200" width="200" height="200"
+               role="img" aria-label="FuturePath AI assistant">
+            <defs>
+              <linearGradient id="ai-shell" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"  stop-color="#ffffff"/>
+                <stop offset="100%" stop-color="#e9edf5"/>
+              </linearGradient>
+              <linearGradient id="ai-accent" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%"   stop-color="#4f7cff"/>
+                <stop offset="100%" stop-color="#8b5cf6"/>
+              </linearGradient>
+              <radialGradient id="ai-glow" cx="50%" cy="42%" r="60%">
+                <stop offset="0%"   stop-color="#4f7cff" stop-opacity=".55"/>
+                <stop offset="100%" stop-color="#4f7cff" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+
+            <!-- rotating outer segments -->
+            <g class="ai-ticks">
+              <circle cx="100" cy="100" r="86" fill="none" stroke="url(#ai-accent)"
+                      stroke-width="1.5" stroke-dasharray="4 14" opacity=".55"/>
+            </g>
+            <g class="ai-ticks ai-ticks-rev">
+              <circle cx="100" cy="100" r="76" fill="none" stroke="url(#ai-accent)"
+                      stroke-width="1" stroke-dasharray="2 22" opacity=".38"/>
+            </g>
+
+            <!-- head -->
+            <rect x="58" y="52" width="84" height="76" rx="26"
+                  fill="url(#ai-shell)" stroke="#d7dee9" stroke-width="1.5"/>
+            <!-- antenna -->
+            <line x1="100" y1="52" x2="100" y2="38" stroke="#c3ccdb" stroke-width="3" stroke-linecap="round"/>
+            <circle class="ai-antenna" cx="100" cy="34" r="6" fill="url(#ai-accent)"/>
+
+            <!-- visor -->
+            <rect x="68" y="72" width="64" height="34" rx="17" fill="#111827"/>
+            <!-- eye sockets stay put; the pupils inside them move -->
+            <g class="ai-eyes">
+              <circle class="ai-socket" cx="86"  cy="89" r="8"   fill="#1c2430"/>
+              <circle class="ai-socket" cx="114" cy="89" r="8"   fill="#1c2430"/>
+              <g class="ai-pupils">
+                <circle class="ai-eye" cx="86"  cy="89" r="5" fill="#7ea3ff"/>
+                <circle class="ai-eye" cx="114" cy="89" r="5" fill="#7ea3ff"/>
+              </g>
+            </g>
+
+            <!-- a quiet resting mouth line, no animation -->
+            <rect x="91" y="118" width="18" height="2.5" rx="1.25" fill="#c3ccdb"/>
+
+            <!-- shoulders / body -->
+            <path d="M64 150 q36 -22 72 0 l6 24 q-42 16 -84 0 z"
+                  fill="url(#ai-shell)" stroke="#d7dee9" stroke-width="1.5"/>
+            <circle class="ai-core-dot" cx="100" cy="162" r="4.5" fill="url(#ai-accent)"/>
+          </svg>
+
+          <div class="ai-badge">
+            <span class="ai-dot"></span>
+            <span>FuturePath AI</span>
+          </div>
+
+          <!-- the selected field, shown only when an icon is clicked -->
+          <div class="orbit-readout" id="orbitReadout" hidden>
+            <span class="or-label"></span>
+            <a class="or-link">Open →</a>
+          </div>
+        </figure>
+
+        <!-- every career field rides its own orbit, evenly spaced, always turning -->
+        {% set orbit = [
+          ('💻','Software Engineer','software-engineer','r1','0s'),
+          ('📊','Data Scientist / AI Engineer','data-scientist','r1','-6.8s'),
+          ('🩺','Doctor (MBBS)','doctor','r1','-13.6s'),
+          ('⚖️','Lawyer','lawyer','r1','-20.4s'),
+          ('🏛️','Architect','architect','r1','-27.2s'),
+          ('🧬','Biotechnologist / Research Scientist','biotechnologist','r2','0s'),
+          ('🎨','Designer (UX / Product / Graphic)','designer','r2','-5.2s'),
+          ('📈','Investment / Financial Analyst','financial-analyst','r2','-10.4s'),
+          ('🧾','Chartered Accountant','chartered-accountant','r2','-15.6s'),
+          ('📰','Journalist / Content Creator','journalist','r2','-20.8s'),
+          ('🧠','Psychologist / Counsellor','psychologist','r3','0s'),
+          ('🚀','Entrepreneur / Business Owner','entrepreneur','r3','-4.75s'),
+          ('🏦','Civil Servant (IAS/IPS/IFS)','civil-servant','r3','-9.5s'),
+          ('📋','Company Secretary','company-secretary','r3','-14.25s')
+        ] %}
+        {% for icon, label, slug, ring, delay in orbit %}
+        <div class="orbit-carrier {{ ring }}" data-i="{{ loop.index0 }}"
+             style="animation-delay: {{ delay }}">
+          <button type="button" class="orbit-node"
+                  data-label="{{ label }}" data-slug="{{ slug }}"
+                  aria-label="{{ label }}">
+            <span class="on-icon">{{ icon }}</span>
+          </button>
+        </div>
+        {% endfor %}
+      </div>
+      <p class="orbit-caption">Every path, ranked against your profile</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 2. PROGRESS + KEY STATISTICS -->
+<section class="section" data-spy="progress">
+  <div class="grid two">
+    <!-- Circular profile progress -->
+    <div class="card progress-card">
+      <div class="card-head">
+        <div>
+          <h3 class="card-title">Profile completeness</h3>
+          <p class="small faint" style="margin:0">The more you answer, the sharper your matches</p>
+        </div>
+      </div>
+      <div class="progress-ring-wrap">
+        <div class="progress-ring" style="--pct: {{ dashboard.completion }}">
+          <svg viewBox="0 0 120 120" width="150" height="150">
+            <circle class="pr-track" cx="60" cy="60" r="52"></circle>
+            <circle class="pr-fill" cx="60" cy="60" r="52"
+                    stroke-dasharray="326.7"
+                    stroke-dashoffset="326.7"
+                    data-offset="{{ 326.7 - (326.7 * dashboard.completion / 100) }}"></circle>
+          </svg>
+          <div class="progress-ring-label">
+            <span class="pr-value" data-count="{{ dashboard.completion }}" data-suffix="%">0%</span>
+            <span class="pr-sub">complete</span>
+          </div>
+        </div>
+        <div class="progress-ring-side">
+          <p class="small muted">
+            {% if dashboard.completion < 100 %}
+              Answer {{ dashboard.total_questions - dashboard.answered }} more question(s) to
+              unlock more accurate career matches.
+            {% else %}
+              Your profile is complete — your matches are as accurate as they can be.
+            {% endif %}
+          </p>
+          <div class="mini-stats">
+            <div><b>{{ dashboard.profile.interest_answered }}</b><span>interests</span></div>
+            <div><b>{{ dashboard.profile.skills_answered }}</b><span>skills</span></div>
+            <div><b>{{ dashboard.profile.preference_answered }}</b><span>preferences</span></div>
+            <div><b>{{ dashboard.academics|length }}</b><span>subjects</span></div>
+          </div>
+          <a class="btn primary sm" href="{{ url_for('assessment_page') }}">Complete my profile →</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Key statistics -->
+    <div class="stack">
+      <div class="metric-grid" style="grid-template-columns:1fr 1fr">
+        <div class="metric">
+          <div class="k">Top stream</div>
+          <div class="v violet">{{ dashboard.result.top_stream['match'] if dashboard.result.top_stream else 0 }}%</div>
+          <div class="d">{{ dashboard.result.top_stream['name'] if dashboard.result.top_stream else '—' }}</div>
+        </div>
+        <div class="metric">
+          <div class="k">Average marks</div>
+          <div class="v brand" data-count="{{ dashboard.average_marks }}" data-suffix="%">0%</div>
+          <div class="d">{{ dashboard.academics|length }} subject(s)</div>
+        </div>
+        <div class="metric">
+          <div class="k">Roadmaps</div>
+          <div class="v good" data-count="{{ dashboard.roadmaps|length }}">0</div>
+          <div class="d">in progress</div>
+        </div>
+        <div class="metric">
+          <div class="k">Careers ranked</div>
+          <div class="v warn" data-count="{{ dashboard.result.careers|length }}">0</div>
+          <div class="d">against your profile</div>
+        </div>
+      </div>
+
+      <div class="card next-action">
+        <div class="card-head">
+          <div>
+            <h3 class="card-title">Do this next</h3>
+            <p class="small faint" style="margin:0">{{ dashboard.next_action.label }}</p>
+          </div>
+          <span class="tag brand">Suggested</span>
+        </div>
+        <p class="small muted" style="margin-bottom:var(--sp-4)">{{ dashboard.next_action.detail }}</p>
+        <a class="btn primary" href="{{ dashboard.next_action.url }}">{{ dashboard.next_action.cta }}</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================== 3. TOP CAREER MATCHES (rich cards) -->
+<section class="section" data-spy="matches">
+  <div class="section-head">
+    <div>
+      <h2>Your top career matches</h2>
+      <p>Scored on your interests, skills and academic fit — live from your assessment.</p>
+    </div>
+    <a class="btn sm" href="{{ url_for('results_page') }}">See all {{ dashboard.result.careers|length }} matches</a>
+  </div>
+
+  <div class="career-grid">
+    {% for c in dashboard.result.careers[:6] %}
+    {% set img = career_image(c['slug'], 700, 460) %}
+    <article class="career-card">
+      <div class="cc-media">
+        {% if img.url %}
+        <img src="{{ img.url }}" alt="{{ img.alt }}" loading="lazy" decoding="async"
+             width="700" height="460">
+        {% endif %}
+        <span class="cc-scrim"></span>
+        <span class="cc-match" data-count="{{ c['match'] }}" data-suffix="%">0%</span>
+        <span class="cc-match-label">match</span>
+        <span class="cc-field">{{ c['field'] }}</span>
+      </div>
+      <div class="cc-body">
+        <h3>{{ c['icon'] }} {{ c['name'] }}</h3>
+        <p class="cc-desc">{{ c['summary'][:112] }}…</p>
+        <div class="cc-skills">
+          {% for s in c['skills'][:3] %}<span class="pill">{{ s.replace('_', ' ') }}</span>{% endfor %}
+        </div>
+        <div class="cc-bar"><i style="width: {{ c['match'] }}%"></i></div>
+        <div class="cc-actions">
+          <a class="btn sm primary" href="{{ url_for('career_detail', slug=c['slug']) }}">Explore career</a>
+          <a class="btn sm ghost" href="{{ url_for('roadmap_page') }}?career={{ c['slug'] }}">Roadmap</a>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ============================== 4. PERSONALISED ROADMAP VISUAL -->
+<section class="section" data-spy="roadmap">
+  <div class="section-head">
+    <div>
+      <h2>Your roadmap</h2>
+      <p>
+        {% if dashboard.roadmaps %}
+          The path from where you are now to {{ dashboard.roadmaps[0]['career_name'] }}.
+        {% else %}
+          Every step FuturePath builds for you, from subject choice to your first job.
+        {% endif %}
+      </p>
+    </div>
+    {% if dashboard.roadmaps %}
+    <a class="btn sm" href="{{ url_for('roadmap_page') }}?career={{ dashboard.roadmaps[0]['career_slug'] }}">
+      Open full roadmap</a>
+    {% else %}
+    <a class="btn sm primary" href="{{ url_for('results_page') }}">Build a roadmap</a>
+    {% endif %}
+  </div>
+
+  <div class="roadmap-flow">
+    {% set stages = dashboard.stages if dashboard.stages else [
+      {'key':'goal','label':'Career goal','icon':'🎯','done':0,'total':1},
+      {'key':'study','label':'Subjects','icon':'📚','done':0,'total':1},
+      {'key':'exam','label':'Entrance exams','icon':'📝','done':0,'total':1},
+      {'key':'apply','label':'Courses & colleges','icon':'🏛️','done':0,'total':1},
+      {'key':'fund','label':'Scholarships','icon':'🎓','done':0,'total':1},
+      {'key':'growth','label':'Skills & internships','icon':'🚀','done':0,'total':1}
+    ] %}
+    {% for st in stages %}
+    <div class="flow-node {{ 'flow-done' if st['total'] and st['done'] == st['total'] }}"
+         data-node="{{ loop.index0 }}">
+      <div class="flow-dot">{{ st['icon'] }}</div>
+      <div class="flow-label">{{ st['label'] }}</div>
+      <div class="flow-meta">
+        {% if st['total'] %}{{ st['done'] }}/{{ st['total'] }}{% else %}—{% endif %}
+      </div>
+    </div>
+    {% if not loop.last %}<div class="flow-connector" data-node="{{ loop.index0 }}"></div>{% endif %}
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ============================== 5. DISCOVER YOUR FUTURE -->
+<section class="section" data-spy="discover">
+  <div class="section-head">
+    <div>
+      <h2>Your future is bigger than a job title.</h2>
+      <p>Eight fields, fourteen careers — explore the ones that fit you.</p>
+    </div>
+  </div>
+  <div class="hscroll" role="region" aria-label="Career categories">
+    {% set cat_fields = ['Technology', 'Healthcare', 'Science & Research', 'Business',
+                         'Design & Media', 'Finance', 'Law', 'Public Service'] %}
+    {% for f in cat_fields %}
+    {% set img = category_image(f, 620, 780) %}
+    <a class="cat-card" href="{{ url_for('careers_page', field=f) }}">
+      {% if img.url %}
+      <img src="{{ img.url }}" alt="{{ img.alt }}" loading="lazy" decoding="async"
+           width="620" height="780">
+      {% endif %}
+      <span class="cat-scrim"></span>
+      <span class="cat-body">
+        <span class="cat-name">{{ f }}</span>
+        <span class="cat-cta">Explore →</span>
+      </span>
+    </a>
+    {% endfor %}
+  </div>
+</section>
+
+{% else %}
+<!-- ============================ LOGGED-OUT HERO ============================ -->
+<section class="hero hero-editorial">
+  <div class="hero-split">
+    <div class="hero-copy">
+      <span class="eyebrow">For Class 10, 11 and 12 students in India</span>
+      <h1>Find the career path that's <span class="grad">built for you</span>.</h1>
+      <p class="lede">
+        FuturePath uses your interests, skills, academic record and assessment results to
+        recommend the streams and careers that actually fit — then builds you a roadmap to reach
+        them.
+      </p>
+      <div class="btn-row">
+        <button class="btn primary lg" onclick="FP.openAuth('register')">Start my assessment</button>
+        <a class="btn lg" href="{{ url_for('careers_page') }}">Explore careers</a>
+      </div>
+      <div class="hero-trust">
+        <span><b>{{ streams|length }}</b> streams compared</span>
+        <span><b>{{ careers|length }}</b> careers profiled</span>
+        <span><b>18</b> entrance exams</span>
+        <span><b>8</b> scholarships</span>
+      </div>
+    </div>
+
+    <div class="hero-visual" aria-hidden="true">
+      <div class="orbit-stage">
+        <!-- three counter-rotating rings -->
+        <div class="orbit-ring ring-1"></div>
+        <div class="orbit-ring ring-2"></div>
+        <div class="orbit-ring ring-3"></div>
+
+        <!-- spokes that pulse outward from the core -->
+        <div class="spokes">
+          {% for i in range(8) %}
+          <span class="spoke" style="--a: {{ i * 45 }}deg; --d: {{ 0.4 + (i % 4) * 0.35 }}s"></span>
+          {% endfor %}
+        </div>
+
+        <!-- the AI core: a robot that watches, thinks and answers -->
+        <figure class="orbit-ai">
+          <span class="ai-halo"></span>
+          <span class="ai-halo ai-halo-2"></span>
+
+          <svg class="ai-robot" viewBox="0 0 200 200" width="200" height="200"
+               role="img" aria-label="FuturePath AI assistant">
+            <defs>
+              <linearGradient id="ai-shell" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%"  stop-color="#ffffff"/>
+                <stop offset="100%" stop-color="#e9edf5"/>
+              </linearGradient>
+              <linearGradient id="ai-accent" x1="0" y1="0" x2="1" y2="1">
+                <stop offset="0%"   stop-color="#4f7cff"/>
+                <stop offset="100%" stop-color="#8b5cf6"/>
+              </linearGradient>
+              <radialGradient id="ai-glow" cx="50%" cy="42%" r="60%">
+                <stop offset="0%"   stop-color="#4f7cff" stop-opacity=".55"/>
+                <stop offset="100%" stop-color="#4f7cff" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+
+            <!-- rotating outer segments -->
+            <g class="ai-ticks">
+              <circle cx="100" cy="100" r="86" fill="none" stroke="url(#ai-accent)"
+                      stroke-width="1.5" stroke-dasharray="4 14" opacity=".55"/>
+            </g>
+            <g class="ai-ticks ai-ticks-rev">
+              <circle cx="100" cy="100" r="76" fill="none" stroke="url(#ai-accent)"
+                      stroke-width="1" stroke-dasharray="2 22" opacity=".38"/>
+            </g>
+
+            <!-- head -->
+            <rect x="58" y="52" width="84" height="76" rx="26"
+                  fill="url(#ai-shell)" stroke="#d7dee9" stroke-width="1.5"/>
+            <!-- antenna -->
+            <line x1="100" y1="52" x2="100" y2="38" stroke="#c3ccdb" stroke-width="3" stroke-linecap="round"/>
+            <circle class="ai-antenna" cx="100" cy="34" r="6" fill="url(#ai-accent)"/>
+
+            <!-- visor -->
+            <rect x="68" y="72" width="64" height="34" rx="17" fill="#111827"/>
+            <!-- eye sockets stay put; the pupils inside them move -->
+            <g class="ai-eyes">
+              <circle class="ai-socket" cx="86"  cy="89" r="8"   fill="#1c2430"/>
+              <circle class="ai-socket" cx="114" cy="89" r="8"   fill="#1c2430"/>
+              <g class="ai-pupils">
+                <circle class="ai-eye" cx="86"  cy="89" r="5" fill="#7ea3ff"/>
+                <circle class="ai-eye" cx="114" cy="89" r="5" fill="#7ea3ff"/>
+              </g>
+            </g>
+
+            <!-- a quiet resting mouth line, no animation -->
+            <rect x="91" y="118" width="18" height="2.5" rx="1.25" fill="#c3ccdb"/>
+
+            <!-- shoulders / body -->
+            <path d="M64 150 q36 -22 72 0 l6 24 q-42 16 -84 0 z"
+                  fill="url(#ai-shell)" stroke="#d7dee9" stroke-width="1.5"/>
+            <circle class="ai-core-dot" cx="100" cy="162" r="4.5" fill="url(#ai-accent)"/>
+          </svg>
+
+          <div class="ai-badge">
+            <span class="ai-dot"></span>
+            <span>FuturePath AI</span>
+          </div>
+
+          <!-- the selected field, shown only when an icon is clicked -->
+          <div class="orbit-readout" id="orbitReadout" hidden>
+            <span class="or-label"></span>
+            <a class="or-link">Open →</a>
+          </div>
+        </figure>
+
+        <!-- every career field rides its own orbit, evenly spaced, always turning -->
+        {% set orbit = [
+          ('💻','Software Engineer','software-engineer','r1','0s'),
+          ('📊','Data Scientist / AI Engineer','data-scientist','r1','-6.8s'),
+          ('🩺','Doctor (MBBS)','doctor','r1','-13.6s'),
+          ('⚖️','Lawyer','lawyer','r1','-20.4s'),
+          ('🏛️','Architect','architect','r1','-27.2s'),
+          ('🧬','Biotechnologist / Research Scientist','biotechnologist','r2','0s'),
+          ('🎨','Designer (UX / Product / Graphic)','designer','r2','-5.2s'),
+          ('📈','Investment / Financial Analyst','financial-analyst','r2','-10.4s'),
+          ('🧾','Chartered Accountant','chartered-accountant','r2','-15.6s'),
+          ('📰','Journalist / Content Creator','journalist','r2','-20.8s'),
+          ('🧠','Psychologist / Counsellor','psychologist','r3','0s'),
+          ('🚀','Entrepreneur / Business Owner','entrepreneur','r3','-4.75s'),
+          ('🏦','Civil Servant (IAS/IPS/IFS)','civil-servant','r3','-9.5s'),
+          ('📋','Company Secretary','company-secretary','r3','-14.25s')
+        ] %}
+        {% for icon, label, slug, ring, delay in orbit %}
+        <div class="orbit-carrier {{ ring }}" data-i="{{ loop.index0 }}"
+             style="animation-delay: {{ delay }}">
+          <button type="button" class="orbit-node"
+                  data-label="{{ label }}" data-slug="{{ slug }}"
+                  aria-label="{{ label }}">
+            <span class="on-icon">{{ icon }}</span>
+          </button>
+        </div>
+        {% endfor %}
+      </div>
+      <p class="orbit-caption">Every path, ranked against your profile</p>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<!-- ============================== 6. WHY FUTUREPATH ============================== -->
+<section class="section" data-spy="why">
+  <div class="section-head">
+    <div>
+      <h2>Why FuturePath</h2>
+      <p>Not another list of careers. A decision-support tool built around one student at a time.</p>
+    </div>
+  </div>
+  <div class="why-grid">
+    {% set why = [
+      ('01', 'AI-Powered Matching', 'Interest, skills and academic fit are scored separately, so you can see exactly why a career ranks where it does — not just a number.', 'coding'),
+      ('02', 'Personalised Roadmaps', 'Every career becomes a step-by-step plan: which stream, which subjects, which exams, which scholarships, and when.', 'mentor'),
+      ('03', 'Explore Real Career Paths', 'Fourteen careers profiled in depth — the actual day-to-day work, salary bands, and how hard each is to enter.', 'collaboration'),
+      ('04', 'Track Your Progress', 'Your profile, your matches and your roadmap progress are saved, so the picture sharpens as you learn more about yourself.', 'students')
+    ] %}
+    {% for num, title, body, img_key in why %}
+    {% set img = editorial_image(img_key, 640, 420) %}
+    <article class="why-card">
+      <div class="why-media">
+        {% if img.url %}
+        <img src="{{ img.url }}" alt="{{ img.alt }}" loading="lazy" decoding="async"
+             width="640" height="420">
+        {% endif %}
+      </div>
+      <div class="why-body">
+        <span class="why-num">{{ num }}</span>
+        <h3>{{ title }}</h3>
+        <p>{{ body }}</p>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ============================== 7. CAREER EXPLORER ============================== -->
+<section class="section" data-spy="explorer">
+  <div class="section-head">
+    <div>
+      <h2>Explore careers</h2>
+      <p>Filter by field, then open any career for the full picture.</p>
+    </div>
+    <a class="btn sm" href="{{ url_for('careers_page') }}">Full explorer</a>
+  </div>
+
+  <div class="filter-bar" id="fieldFilters">
+    <button class="chip chip-on" data-field="">All</button>
+    {% for f in ['Technology', 'Healthcare', 'Science & Research', 'Business',
+                 'Design & Media', 'Finance', 'Law', 'Public Service'] %}
+    <button class="chip" data-field="{{ f }}">{{ f }}</button>
+    {% endfor %}
+  </div>
+
+  <div class="career-grid" id="explorerGrid">
+    {% for c in careers %}
+    {% set img = career_image(c['slug'], 700, 460) %}
+    <article class="career-card explorer-card" data-field="{{ c['field'] }}">
+      <div class="cc-media">
+        {% if img.url %}
+        <img src="{{ img.url }}" alt="{{ img.alt }}" loading="lazy" decoding="async"
+             width="700" height="460">
+        {% endif %}
+        <span class="cc-scrim"></span>
+        <span class="cc-field">{{ c['field'] }}</span>
+      </div>
+      <div class="cc-body">
+        <h3>{{ c['icon'] }} {{ c['name'] }}</h3>
+        <p class="cc-desc">{{ c['summary'][:100] }}…</p>
+        <div class="cc-meta">
+          <span class="pill">Starts at {{ c['salary_start'].split('(')[0].strip() }}</span>
+          <span class="pill">{{ c['difficulty'] }}</span>
+        </div>
+        <div class="cc-actions">
+          <a class="btn sm primary" href="{{ url_for('career_detail', slug=c['slug']) }}">Explore career</a>
+        </div>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  <p class="empty" id="explorerEmpty" style="display:none">No careers in that field yet.</p>
+</section>
+
+<!-- ============================== 8. FINAL CTA ============================== -->
+<section class="section">
+  <div class="final-cta">
+    <div class="fc-copy">
+      <span class="eyebrow" style="background:rgba(255,255,255,.18);color:#fff;border-color:transparent">
+        {% if student %}Your next step{% else %}Start today{% endif %}
+      </span>
+      <h2>{% if student %}Keep going — your matches get sharper every time you answer.{% else %}Your future is a decision, not a guess.{% endif %}</h2>
+      <p>
+        {% if student %}
+          You've answered {{ dashboard.answered }} of {{ dashboard.total_questions }} questions.
+          Finish the rest to make your recommendations as accurate as they can be.
+        {% else %}
+          The assessment takes about five minutes. You'll get a ranked list of streams and
+          careers, and a roadmap you can actually follow.
+        {% endif %}
+      </p>
+      <div class="btn-row">
+        {% if student %}
+          <a class="btn lg fc-btn" href="{{ dashboard.next_action.url }}">{{ dashboard.next_action.cta }}</a>
+          <a class="btn lg fc-btn-ghost" href="{{ url_for('results_page') }}">See my matches</a>
+        {% else %}
+          <button class="btn lg fc-btn" onclick="FP.openAuth('register')">Create my account</button>
+          <a class="btn lg fc-btn-ghost" href="{{ url_for('careers_page') }}">Browse careers</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Entrance exams &amp; scholarships — FuturePath{% endblock %}
+
+{% block content %}
+<section class="hero" style="padding-bottom:12px">
+  <h1>Entrance exams &amp; scholarships</h1>
+  <p class="lede">
+    Every major exam with its eligibility, when it's held and how long you need to prepare —
+    plus the scholarships most students never check and end up losing money over.
+  </p>
+</section>
+
+<section class="section tight">
+  <h2>Entrance exams</h2>
+  <p class="sub">{{ exams|length }} exams across all streams.</p>
+  <div class="grid two">
+    {% for e in exams %}
+    <div class="card">
+      <div class="row-between" style="align-items:flex-start">
+        <div>
+          <h3>{{ e['name'] }}</h3>
+          <p class="small faint">{{ e['full_name'] }}</p>
+        </div>
+        <span class="tag brand">{{ e['prep_months'] }} mo prep</span>
+      </div>
+
+      <table style="margin-top:12px">
+        <tbody>
+          <tr><td style="width:120px">Eligibility</td><td class="small">{{ e['eligibility'] }}</td></tr>
+          <tr><td>When held</td><td class="small">{{ e['when_held'] }}</td></tr>
+          <tr><td>Application window</td><td class="small">{{ e['window'] }}</td></tr>
+          <tr><td>Syllabus</td><td class="small">
+            <div style="display:flex;gap:5px;flex-wrap:wrap">
+              {% for s in e['syllabus'] %}<span class="pill">{{ s }}</span>{% endfor %}
+            </div>
+          </td></tr>
+          <tr><td>Official site</td><td class="small mono">{{ e['website'] }}</td></tr>
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section class="section">
+  <h2>Scholarships</h2>
+  <p class="sub">
+    Most students never apply. The eligibility is usually broader than people assume, and
+    scholarship deadlines often fall <b>earlier</b> than admission deadlines.
+  </p>
+  <div class="grid two">
+    {% for s in scholarships %}
+    <div class="card">
+      <div class="row-between" style="align-items:flex-start">
+        <div>
+          <h3>{{ s['name'] }}</h3>
+          <p class="small faint">{{ s['provider'] }}</p>
+        </div>
+        <span class="tag good">{{ s['amount'] }}</span>
+      </div>
+      <p class="small" style="margin-top:12px"><b>Who qualifies:</b> {{ s['eligibility'] }}</p>
+      <p class="small muted" style="margin-top:8px"><b>Deadline:</b> {{ s['deadline'] }}</p>
+      <p class="small muted">{{ s['notes'] }}</p>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

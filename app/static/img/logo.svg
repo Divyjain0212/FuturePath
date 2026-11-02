@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" width="40" height="40" role="img" aria-label="FuturePath">
+  <defs>
+    <linearGradient id="fp-a" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#3b6fe0"/>
+      <stop offset="55%" stop-color="#6d3fd4"/>
+      <stop offset="100%" stop-color="#0d8f8f"/>
+    </linearGradient>
+    <linearGradient id="fp-b" x1="0" y1="1" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity=".55"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="1"/>
+    </linearGradient>
+  </defs>
+  <!-- rounded square mark -->
+  <rect x="1.5" y="1.5" width="37" height="37" rx="11" fill="url(#fp-a)"/>
+  <!-- a path that forks and continues: the product idea, not a letterform -->
+  <path d="M12 31.5 V19.5 a7.5 7.5 0 0 1 7.5 -7.5 h9.5"
+        fill="none" stroke="url(#fp-b)" stroke-width="3.1"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M12 31.5 V24.5 a4.5 4.5 0 0 1 4.5 -4.5"
+        fill="none" stroke="#ffffff" stroke-opacity=".42" stroke-width="2.2"
+        stroke-linecap="round"/>
+  <!-- the destination -->
+  <circle cx="30" cy="12" r="4.1" fill="#ffffff"/>
+  <circle cx="30" cy="12" r="1.8" fill="#6d3fd4"/>
+</svg>

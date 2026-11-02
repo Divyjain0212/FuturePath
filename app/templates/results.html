@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}My results — FuturePath{% endblock %}
+
+{% block content %}
+<section class="hero" style="padding-bottom:12px">
+  <span class="eyebrow">Step 3 of 4</span>
+  <h1>Your matches</h1>
+  <p class="lede">
+    Every stream and career, ranked against your profile. Nothing here is a verdict — it is a
+    starting point for a conversation with your family and your school counsellor.
+  </p>
+</section>
+
+{% if not result.profile.completed %}
+<div class="note" style="margin-bottom:20px">
+  <b>Your assessment isn't finished yet.</b> These results are based on your subject marks alone.
+  <a href="{{ url_for('assessment_page') }}">Complete the interest and skills sections</a> to make
+  the matches meaningful.
+</div>
+{% endif %}
+
+<!-- ------------------------------------------------------- your profile -->
+<div class="grid two" style="margin-bottom:var(--sp-8)">
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h3 class="card-title">Your interests</h3>
+        <p class="small faint" style="margin:0">Holland's RIASEC dimensions</p>
+      </div>
+      <span class="tag violet">Profile</span>
+    </div>
+    <div class="riasec">
+      {% for letter, label in result.riasec_labels.items() %}
+      {% set val = result.profile.interest.get(letter, 0) %}
+      <div class="riasec-row">
+        <span class="letter">{{ letter }}</span>
+        <div class="bar"><i style="width: {{ (val * 100)|round|int }}%"></i></div>
+        <span class="val">{{ (val * 100)|round|int }}%</span>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="riasec-legend">
+      <div><b>R</b><span>Realistic — hands-on, building, machines</span></div>
+      <div><b>I</b><span>Investigative — analysis, research, problem-solving</span></div>
+      <div><b>A</b><span>Artistic — creativity, design, expression</span></div>
+      <div><b>S</b><span>Social — helping, teaching, caring</span></div>
+      <div><b>E</b><span>Enterprising — leading, persuading, business</span></div>
+      <div><b>C</b><span>Conventional — organising, systems, accuracy</span></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <h3 class="card-title">How your score is built</h3>
+        <p class="small faint" style="margin:0">Three signals, weighted</p>
+      </div>
+      <span class="tag">Method</span>
+    </div>
+    <div class="metric-grid" style="grid-template-columns:repeat(3,1fr);gap:10px">
+      <div class="metric" style="padding:12px">
+        <div class="k">Interest</div>
+        <div class="v brand" style="font-size:1.25rem">{{ (result.weights.interest * 100)|round|int }}%</div>
+      </div>
+      <div class="metric" style="padding:12px">
+        <div class="k">Skills</div>
+        <div class="v violet" style="font-size:1.25rem">{{ (result.weights.skills * 100)|round|int }}%</div>
+      </div>
+      <div class="metric" style="padding:12px">
+        <div class="k">Academics</div>
+        <div class="v good" style="font-size:1.25rem">{{ (result.weights.academic * 100)|round|int }}%</div>
+      </div>
+    </div>
+    <p class="small muted" style="margin:var(--sp-4) 0 0">
+      These weights live in one place in the engine, so they can be tuned — or replaced by a
+      trained model — without changing the algorithm.
+    </p>
+    <div class="divider"></div>
+    <div class="small muted">
+      <b>{{ result.profile.interest_answered }}</b> interest answers ·
+      <b>{{ result.profile.skills_answered }}</b> skill ratings ·
+      <b>{{ result.profile.academics_entered }}</b> subject marks
+    </div>
+  </div>
+</div>
+
+<!-- ---------------------------------------------------------- top stream -->
+{% if result.top_stream %}
+<div class="hero-panel" style="margin-bottom:var(--sp-8)">
+  <div class="row-between">
+    <div style="max-width:62ch">
+      <span class="tag brand">Strongest stream match</span>
+      <h3 style="font-size:1.3rem;margin:var(--sp-3) 0 6px">
+        {{ result.top_stream['icon'] }} {{ result.top_stream['name'] }}
+        <span class="score-big" data-count="{{ result.top_stream['match'] }}" data-suffix="%">0%</span>
+      </h3>
+      <p class="muted" style="margin:0">{{ result.top_stream['who_it_suits'] }}</p>
+    </div>
+    <div class="btn-row">
+      <a class="btn primary" href="{{ url_for('career_detail', slug=result.careers[0]['slug']) }}">Explore top career</a>
+      <a class="btn" href="{{ url_for('roadmap_page') }}">Build roadmap</a>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ----------------------------------------------------------- streams -->
+<section class="section" style="padding-top:8px">
+  <h2>Streams ranked for you</h2>
+  <p class="sub">A stream scores well when it leads to several careers that fit you — not just one.</p>
+  <div class="grid">
+    {% for s in result.streams %}
+    <div class="card">
+      <div class="top-row">
+        <span class="ico">{{ s['icon'] }}</span>
+        <div style="flex:1;min-width:0">
+          <div class="row-between" style="gap:8px">
+            <h3 style="margin:0">{{ s['name'] }}</h3>
+            <span class="score-big" style="font-size:1.05rem" data-count="{{ s['match'] }}" data-suffix="%">0%</span>
+          </div>
+          <div class="match-bar"><i style="width: {{ s['match'] }}%"></i></div>
+        </div>
+      </div>
+      <p class="small">{{ s['summary'][:128] }}…</p>
+      <div class="tiny faint" style="margin-bottom:var(--sp-3)">
+        Leads to {{ s['career_count'] }} strong match{{ '' if s['career_count'] == 1 else 'es' }}:
+        {{ s['top_careers'] | map(attribute='name') | join(', ') }}
+      </div>
+      <a class="btn sm" href="{{ url_for('careers_page') }}?stream={{ s['slug'] }}">Careers from here</a>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<!-- ----------------------------------------------------------- careers -->
+<section class="section">
+  <h2>Careers ranked for you</h2>
+  <p class="sub">The score blends how much you'd enjoy it with how well your subjects support it.</p>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Career</th><th style="min-width:130px">Match</th>
+          <th class="num">Interest</th><th class="num">Skills</th><th class="num">Academics</th>
+          <th>Entry</th><th></th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for c in result.careers %}
+        <tr>
+          <td><a href="{{ url_for('career_detail', slug=c['slug']) }}">{{ c['icon'] }} <b>{{ c['name'] }}</b></a></td>
+          <td>
+            <b class="mono" data-count="{{ c['match'] }}" data-suffix="%" data-duration="700">0%</b>
+            <div class="match-bar thin"><i style="width: {{ c['match'] }}%"></i></div>
+          </td>
+          <td class="num faint">{{ c['parts']['interest'] }}%</td>
+          <td class="num faint">{{ c['parts']['skills'] }}%</td>
+          <td class="num faint">{{ c['parts']['academic'] }}%</td>
+          <td><span class="tag {{ 'good' if c['difficulty'] == 'Moderate' else 'warn' if c['difficulty'] == 'High' else 'bad' }}">{{ c['difficulty'] }}</span></td>
+          <td><a class="btn sm ghost" href="{{ url_for('roadmap_page') }}?career={{ c['slug'] }}">Roadmap</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="section">
+  <div class="card">
+    <div class="row-between">
+      <div>
+        <h3>Next: build your roadmap</h3>
+        <p class="small">Pick a career and FuturePath lays out the stream, subjects, exams and
+           scholarships, in order, with dates.</p>
+      </div>
+      <div class="btn-row">
+        <a class="btn primary" href="{{ url_for('roadmap_page') }}">Open my roadmap</a>
+        <a class="btn" href="{{ url_for('compare_page') }}?c={{ result.careers[0]['slug'] }},{{ result.careers[1]['slug'] }}">Compare my top two</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

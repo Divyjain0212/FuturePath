@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Compare careers — FuturePath{% endblock %}
+
+{% block content %}
+<section class="hero" style="padding-bottom:12px">
+  <h1>Compare side by side</h1>
+  <p class="lede">
+    Pick up to three careers and see the differences that actually matter — the stream required,
+    subjects, entrance exams, salary and how hard each is to enter.
+  </p>
+</section>
+
+<div class="card" style="margin-bottom:22px">
+  <div class="grid three">
+    {% for i in range(3) %}
+    <label class="field"><span>Career {{ i + 1 }}{{ ' (optional)' if i else '' }}</span>
+      <select id="pick{{ i }}" onchange="applyCompare()">
+        <option value="">— none —</option>
+        {% for c in all_careers %}
+        <option value="{{ c['slug'] }}" {{ 'selected' if careers|length > i and careers[i]['slug'] == c['slug'] }}>
+          {{ c['icon'] }} {{ c['name'] }}
+        </option>
+        {% endfor %}
+      </select>
+    </label>
+    {% endfor %}
+  </div>
+  <div class="btn-row">
+    <button class="btn primary" onclick="applyCompare()">Compare</button>
+  </div>
+</div>
+
+{% if careers|length >= 2 %}
+<div class="card" style="overflow-x:auto">
+  <table class="compare-table">
+    <thead>
+      <tr>
+        <th>Attribute</th>
+        {% for c in careers %}
+        <th><span style="font-size:1.3rem">{{ c['icon'] }}</span><br>{{ c['name'] }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Field</td>
+        {% for c in careers %}<td><span class="tag brand">{{ c['field'] }}</span></td>{% endfor %}
+      </tr>
+      <tr>
+        <td>What the work is</td>
+        {% for c in careers %}<td class="small">{{ c['summary'] }}</td>{% endfor %}
+      </tr>
+      <tr>
+        <td>Class 11 stream</td>
+        {% for c in careers %}<td class="small">{{ c['stream_slugs'] | join(', ') | replace('-', ' ') | title }}</td>{% endfor %}
+      </tr>
+      <tr>
+        <td>Key subjects</td>
+        {% for c in careers %}<td class="small">{{ c['subjects_needed'] | join(', ') }}</td>{% endfor %}
+      </tr>
+      <tr>
+        <td>Entrance exams</td>
+        {% for c in careers %}
+        <td class="small">{{ c['exams'] | join(', ') | upper if c['exams'] else 'None — direct admission' }}</td>
+        {% endfor %}
+      </tr>
+      <tr>
+        <td>Starting salary</td>
+        {% for c in careers %}<td class="small"><b>{{ c['salary_start'] }}</b></td>{% endfor %}
+      </tr>
+      <tr>
+        <td>Mid-career salary</td>
+        {% for c in careers %}<td class="small"><b>{{ c['salary_mid'] }}</b></td>{% endfor %}
+      </tr>
+      <tr>
+        <td>Growth outlook</td>
+        {% for c in careers %}<td class="small">{{ c['growth'] }}</td>{% endfor %}
+      </tr>
+      <tr>
+        <td>How hard to enter</td>
+        {% for c in careers %}
+        <td><span class="tag {{ 'good' if c['difficulty'] == 'Moderate' else 'warn' if c['difficulty'] == 'High' else 'bad' }}">{{ c['difficulty'] }}</span></td>
+        {% endfor %}
+      </tr>
+      <tr>
+        <td>A typical day</td>
+        {% for c in careers %}<td class="small">{{ c['day_in_life'] }}</td>{% endfor %}
+      </tr>
+      <tr>
+        <td>Skills that matter</td>
+        {% for c in careers %}<td class="small">{{ c['skills'] | join(', ') | replace('_', ' ') }}</td>{% endfor %}
+      </tr>
+      <tr>
+        <td></td>
+        {% for c in careers %}
+        <td><a class="btn sm primary" href="{{ url_for('roadmap_page') }}?career={{ c['slug'] }}">Roadmap</a></td>
+        {% endfor %}
+      </tr>
+    </tbody>
+  </table>
+</div>
+{% elif careers|length == 1 %}
+<div class="empty">Pick at least one more career to see a comparison.</div>
+{% else %}
+<div class="empty">Choose two or three careers above and press Compare.</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+function applyCompare() {
+  const picks = [0, 1, 2].map(i => document.getElementById('pick' + i).value).filter(Boolean);
+  location.href = '/compare?c=' + picks.join(',');
+}
+</script>
+{% endblock %}
